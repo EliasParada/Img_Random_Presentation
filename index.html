@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-zinc-500">
+    <div id="spinn" class="w-full h-full flex flex-col justify-center items-center overflow-auto">
+        <div class="flex flex-row justify-center items-center space-x-4">
+            <input v-on:change="reloadSpinner" type="file" multiple webkitdirectory mozdirectory directory class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" value="Buscar carpeta" />
+            <input v-on:change="reloadSpinner" type="file" multiple accept="image/*" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" value="Buscar imagenes" />
+        </div>
+        <div class="bg-zinc-900 rounded-lg shadow-lg w-full h-full p-2 flex flex-col justify-center items-center">
+            <div class="flex flex-row justify-center items-center">
+                <button v-on:click="refreshSpinner" class="self-center bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <g id="refreshIcn">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </g>
+                    </svg>
+                </button>
+                <button v-on:click="activatePresentation" class="self-center bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" id="presentatio" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <g id="playIcn">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        </g>
+                        <g id="pauseIcn">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </g>
+                    </svg>
+                </button>
+                <input v-model="delay" type="number" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" />
+                <input v-model="renderDim" type="number" min="1" max="100" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" />
+                <button v-on:click="toggleFullscreen" class="self-center bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <g id="fullscreenIcn">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </g>
+                        <g id="exitFullscreenIcn">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 16h4a2 2 0 012 2v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4a2 2 0 012-2zm0-8h4v4H5V8zm14 0h4a2 2 0 012 2v4a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4a2 2 0 012-2zm0-8h4v4h-4V8zM5 12h4v4H5v-4zm14 0h4v4h-4v-4zm-7 0h4v4H5v-4z" />
+                        </g>
+                    </svg>
+                </button>
+            </div>
+            <div class="flex flex-row justify-center items-center">
+                <button v-on:click="changeImg('back'); this.presentation = !this.presentation;" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <div class="flex flex-row justify-center items-center">
+                    <img v-for="img in imgRender" v-bind:src="img.rel" v-if="img.position == 'current'" class="w-auto h-screen h-max-screen w-max-screen" />
+                </div>
+                <!-- <img alt="spinner" class="w-auto h-screen h-max-screen w-max-screen" v-bind:src="spinner" /> -->
+                
+                <button v-on:click="changeImg('next'); this.presentation = !this.presentation;" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script>
+        const app = new Vue({
+            el: '#spinn',
+            data: {
+                defaultImg: 'https://www.lapalomera.com/imatges/no_image.png',
+                imgList: [],
+                spinner: '',
+                imgRender: {},
+                renderDim: 1,
+                presentation: false,
+                delay: 3000,
+            },
+            methods: {
+                reloadSpinner(e) {
+                    this.imgList = [];
+                    for(let i = 0; i < e.target.files.length; i++) {
+                        this.imgList.push(URL.createObjectURL(e.target.files[i]));
+                    }
+                    this.imgList = Object.keys(this.imgList).sort(e => { return 0.5 - Math.random() }).map(e => this.imgList[e]);
+                    this.spinner = this.imgList[0];
+                    this.imgRender = {}
+
+                    for(let i = this.imgList.length - 1; i > this.imgList.length - this.renderDim; i--) {
+                        console.log(i);
+                        this.imgRender[this.imgList[i]] = {'rel': this.imgList[i], 'position': 'back'};
+                    }
+                    this.imgRender[this.imgList[0]] = {'rel': this.imgList[0], 'position': 'current'};
+                    for(let i = 0; i < this.renderDim; i++) {
+                        this.imgRender[this.imgList[i + 1]] = {'rel': this.imgList[i + 1], 'position': 'next'};
+                    }
+                    console.log(this.imgRender);
+                },
+                changeImg(direction) {
+                    if(direction == 'back') {
+                        if(this.imgList.indexOf(this.spinner) == 0) {
+                            this.spinner = this.imgList[this.imgList.length - 1];
+                        } else {
+                            this.spinner = this.imgList[this.imgList.indexOf(this.spinner) - 1];
+                        }
+                    } else {
+                        if(this.imgList.indexOf(this.spinner) == this.imgList.length - 1) {
+                            this.spinner = this.imgList[0];
+                        } else {
+                            this.spinner = this.imgList[this.imgList.indexOf(this.spinner) + 1];
+                        }
+                    }
+                },
+                activatePresentation() {
+                    this.presentation = !this.presentation;
+                    let play = document.querySelectorAll('#playIcn')[0];
+                    let pause = document.querySelectorAll('#pauseIcn')[0];
+                    if(this.presentation) {
+                        play.style.animation = 'rise 1s forwards ease-in-out';
+                        pause.style.animation = 'fade 1s forwards ease-in-out';
+                    } else {
+                        play.style.animation = 'fade 1s forwards ease-in-out';
+                        pause.style.animation = 'rise 1s forwards ease-in-out';
+                    }
+                },
+                refreshSpinner() {
+                    this.imgList = [];
+                    this.spinner = this.defaultImg;
+                    let files = document.querySelectorAll('input[type="file"]');
+                    files = files.value = '';
+                    console.log(document.querySelector('#refreshIcn'));
+                    document.querySelector('#refreshIcn').style.animation = 'spin 1s';
+                    setTimeout(() => {
+                        document.querySelector('#refreshIcn').style.animation = '';
+                    }, 1000);
+                },
+                toggleFullscreen() {
+                    if(document.fullscreenElement) {
+                        // document.exitFullscreen();
+                        document.querySelector('#fullscreenIcn').style.animation = 'bounceOuter 1s forwards ease-in-out';
+                        document.querySelector('#exitFullscreenIcn').style.animation = 'bounceInner 1s forwards ease-in-out';
+                        setTimeout(() => {
+                            document.querySelector('#fullscreenIcn').style.animation = '';
+                            document.querySelector('#exitFullscreenIcn').style.animation = '';
+                        }, 1000);
+                    } else {
+                        // document.querySelectorAll('#spinn div')[1].requestFullscreen();
+                        document.querySelector('#fullscreenIcn').style.animation = 'bounceOuter 1s forwards ease-in-out';
+                        document.querySelector('#exitFullscreenIcn').style.animation = 'bounceInner 1s forwards ease-in-out';
+                        setTimeout(() => {
+                            document.querySelector('#fullscreenIcn').style.animation = '';
+                            document.querySelector('#exitFullscreenIcn').style.animation = '';
+                        }, 1000);
+                    }
+                }
+            },
+            watch: {
+                presentation() {
+                    let presentation = setInterval(() => {
+                        console.log(this.imgList.length, this.presentation, this.imgList.length > 0 && this.presentation);
+                        if(this.imgList.length > 0 && this.presentation) {
+                            this.changeImg('next');
+                        } else {
+                            clearInterval(presentation);
+                        }
+                    }, this.delay);
+                }
+            },
+            created() {
+                this.imgList = [];
+                this.spinner = this.defaultImg;
+            }
+        });
+    </script>
+</body>
+</html>
