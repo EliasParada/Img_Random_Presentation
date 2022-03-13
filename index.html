@@ -55,7 +55,9 @@
                 </button>
 
                 <div class="flex flex-row justify-center items-center">
-                    <img v-for="img in imgRender" v-bind:src="img.rel" v-if="img.position == 'current'" class="w-auto h-screen h-max-screen w-max-screen" />
+                    <!-- La clase opacity-0 cambiará a opacity-1 cuando img.position sea igual a current -->
+                    <img v-for="img in imgRender" v-bind:src="img.rel" class="w-0 h-0 h-max-screen w-max-screen opacity-0" v-bind:class="{'opacity-100 w-auto h-screen': img.position === 'current'}" />
+                    
                 </div>
                 <!-- <img alt="spinner" class="w-auto h-screen h-max-screen w-max-screen" v-bind:src="spinner" /> -->
                 
@@ -75,7 +77,6 @@
             data: {
                 defaultImg: 'https://www.lapalomera.com/imatges/no_image.png',
                 imgList: [],
-                spinner: '',
                 imgRender: {},
                 renderDim: 1,
                 presentation: false,
@@ -88,33 +89,55 @@
                         this.imgList.push(URL.createObjectURL(e.target.files[i]));
                     }
                     this.imgList = Object.keys(this.imgList).sort(e => { return 0.5 - Math.random() }).map(e => this.imgList[e]);
-                    this.spinner = this.imgList[0];
                     this.imgRender = {}
 
-                    for(let i = this.imgList.length - 1; i > this.imgList.length - this.renderDim; i--) {
-                        console.log(i);
-                        this.imgRender[this.imgList[i]] = {'rel': this.imgList[i], 'position': 'back'};
+                    // let renderDim = Math.floor(Math.sqrt(this.imgList.length));
+                    let renderDim = this.renderDim * 2;
+
+                    for(let i = 0, j = this.imgList.length - 1; i < renderDim / 2; i++, j--) {
+                        this.imgRender[j] = {'rel': this.imgList[j], 'position': 'back'};
                     }
-                    this.imgRender[this.imgList[0]] = {'rel': this.imgList[0], 'position': 'current'};
-                    for(let i = 0; i < this.renderDim; i++) {
-                        this.imgRender[this.imgList[i + 1]] = {'rel': this.imgList[i + 1], 'position': 'next'};
+                    this.imgRender[0] = {'rel': this.imgList[0], 'position': 'current'};
+                    for(let i = Math.floor(renderDim / 2) + 1, j = 1; i < renderDim + 1; i++, j++) {
+                        this.imgRender[j] = {'rel': this.imgList[j], 'position': 'next'};
                     }
-                    console.log(this.imgRender);
                 },
                 changeImg(direction) {
                     if(direction == 'back') {
-                        if(this.imgList.indexOf(this.spinner) == 0) {
-                            this.spinner = this.imgList[this.imgList.length - 1];
+                        let current = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'current');
+                        let back = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'back');
+                        delete this.imgRender[Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'next').pop()];
+
+                        if(back[back.length - 1] - 1 == 0) { /* New back from image list */
+                            this.imgRender[this.imgList.length - 1] = {'rel': this.imgList[this.imgList.length - 1], 'position': 'back'};
                         } else {
-                            this.spinner = this.imgList[this.imgList.indexOf(this.spinner) - 1];
+                            this.imgRender[back[back.length - 1] - 1] = {'rel': this.imgList[back[0] - 1], 'position': 'back'};
                         }
-                    } else {
-                        if(this.imgList.indexOf(this.spinner) == this.imgList.length - 1) {
-                            this.spinner = this.imgList[0];
+                        if(back[back.length - 1] == 0) { /* Back to current */
+                            this.imgRender[this.imgList.length - 1] = {'rel': this.imgList[this.imgList.length - 1], 'position': 'current'};
                         } else {
-                            this.spinner = this.imgList[this.imgList.indexOf(this.spinner) + 1];
+                            this.imgRender[back[back.length - 1]].position = 'current';
+                        }
+                        this.imgRender[current[0]].position = 'next'; /* Current to next */
+                        console.log(back[0] - 1, back[back.length - 1], current[0]);
+                    } else {
+                        let current = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'current');
+                        let next = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'next');
+                        delete this.imgRender[Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'back').pop()];
+
+                        this.imgRender[current[0]].position = 'back'; /* Current to back */
+                        if(next[next.length - 1] == this.imgList.length - 1) { /* Next to current */
+                            this.imgRender[0] = {'rel': this.imgList[0], 'position': 'current'};
+                        } else {
+                            this.imgRender[next[next.length - 1]].position = 'current';
+                        }
+                        if(parseInt(next[next.length - 1]) + 1 == this.imgList.length - 1) { /* New next from image list */
+                            this.imgRender[0] = {'rel': this.imgList[0], 'position': 'next'};
+                        } else {
+                            this.imgRender[parseInt(next[next.length - 1]) + 1] = {'rel': this.imgList[parseInt(next[next.length - 1]) + 1], 'position': 'next'};
                         }
                     }
+                    this.$forceUpdate();
                 },
                 activatePresentation() {
                     this.presentation = !this.presentation;
@@ -130,10 +153,12 @@
                 },
                 refreshSpinner() {
                     this.imgList = [];
-                    this.spinner = this.defaultImg;
+                    this.imgRender = {};
+                    this.imgRender[0] = {rel: this.defaultImg, position: 'current'};
                     let files = document.querySelectorAll('input[type="file"]');
-                    files = files.value = '';
-                    console.log(document.querySelector('#refreshIcn'));
+                    for(let i = 0; i < files.length; i++) {
+                        files[i].value = '';
+                    }
                     document.querySelector('#refreshIcn').style.animation = 'spin 1s';
                     setTimeout(() => {
                         document.querySelector('#refreshIcn').style.animation = '';
@@ -141,7 +166,7 @@
                 },
                 toggleFullscreen() {
                     if(document.fullscreenElement) {
-                        // document.exitFullscreen();
+                        document.exitFullscreen();
                         document.querySelector('#fullscreenIcn').style.animation = 'bounceOuter 1s forwards ease-in-out';
                         document.querySelector('#exitFullscreenIcn').style.animation = 'bounceInner 1s forwards ease-in-out';
                         setTimeout(() => {
@@ -149,7 +174,7 @@
                             document.querySelector('#exitFullscreenIcn').style.animation = '';
                         }, 1000);
                     } else {
-                        // document.querySelectorAll('#spinn div')[1].requestFullscreen();
+                        document.querySelectorAll('#spinn div')[1].requestFullscreen();
                         document.querySelector('#fullscreenIcn').style.animation = 'bounceOuter 1s forwards ease-in-out';
                         document.querySelector('#exitFullscreenIcn').style.animation = 'bounceInner 1s forwards ease-in-out';
                         setTimeout(() => {
@@ -173,7 +198,7 @@
             },
             created() {
                 this.imgList = [];
-                this.spinner = this.defaultImg;
+                this.imgRender[0] = {rel: this.defaultImg, position: 'current'};
             }
         });
     </script>
