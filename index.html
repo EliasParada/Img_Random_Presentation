@@ -11,7 +11,18 @@
 <body class="bg-zinc-500">
     <div id="spinn" class="w-full h-full flex flex-col justify-center items-center overflow-auto">
         <div class="flex flex-row justify-center items-center space-x-4">
-            <input v-on:change="reloadSpinner" type="file" multiple webkitdirectory mozdirectory directory class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" value="Buscar carpeta" />
+            <a href="#" onclick="document.getElementById('directory').click();" class="bg-zinc-800 text-white rounded-lg px-4 py-2 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <g id="folderIcn">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                    </g>
+                    <g id="folderOpenIcn">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                    </g>
+                </svg>
+                <span class="text-zinc-600" id="directoryFiles">Seleccionar archivo</span>
+            </a>
+            <input v-on:change="reloadSpinner" type="file" id="directory" multiple webkitdirectory mozdirectory directory class="hidden bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" value="Buscar carpeta" />
             <input v-on:change="reloadSpinner" type="file" multiple accept="image/*" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg" value="Buscar imagenes" />
         </div>
         <div class="bg-zinc-900 rounded-lg shadow-lg w-full h-full p-2 flex flex-col justify-center items-center">
@@ -30,7 +41,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                         </g>
                         <g id="pauseIcn">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
                         </g>
                     </svg>
                 </button>
@@ -55,11 +67,9 @@
                 </button>
 
                 <div class="flex flex-row justify-center items-center">
-                    <!-- La clase opacity-0 cambiará a opacity-1 cuando img.position sea igual a current -->
                     <img v-for="img in imgRender" v-bind:src="img.rel" class="w-0 h-0 h-max-screen w-max-screen opacity-0" v-bind:class="{'opacity-100 w-auto h-screen': img.position === 'current'}" />
                     
                 </div>
-                <!-- <img alt="spinner" class="w-auto h-screen h-max-screen w-max-screen" v-bind:src="spinner" /> -->
                 
                 <button v-on:click="changeImg('next'); this.presentation = !this.presentation;" class="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-2 px-4 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -84,6 +94,14 @@
             },
             methods: {
                 reloadSpinner(e) {
+                    document.getElementById('directoryFiles').innerText = `${e.target.files.length} files`;
+                    if (e.target.files.length > 0) {
+                        document.getElementById('folderIcn').style.animation = 'fade 0.5s forwards ease-in-out';
+                        document.getElementById('folderOpenIcn').style.animation = 'rise 0.5s forwards ease-in-out';
+                    } else {
+                        document.getElementById('folderIcn').style.animation = 'rise 0.5s forwards ease-in-out';
+                        document.getElementById('folderOpenIcn').style.animation = 'fade 0.5s forwards ease-in-out';
+                    }
                     this.imgList = [];
                     for(let i = 0; i < e.target.files.length; i++) {
                         this.imgList.push(URL.createObjectURL(e.target.files[i]));
@@ -93,7 +111,6 @@
 
                     // let renderDim = Math.floor(Math.sqrt(this.imgList.length));
                     let renderDim = this.renderDim * 2;
-
                     for(let i = 0, j = this.imgList.length - 1; i < renderDim / 2; i++, j--) {
                         this.imgRender[j] = {'rel': this.imgList[j], 'position': 'back'};
                     }
@@ -111,7 +128,7 @@
                         if(back[back.length - 1] - 1 == 0) { /* New back from image list */
                             this.imgRender[this.imgList.length - 1] = {'rel': this.imgList[this.imgList.length - 1], 'position': 'back'};
                         } else {
-                            this.imgRender[back[back.length - 1] - 1] = {'rel': this.imgList[back[0] - 1], 'position': 'back'};
+                            this.imgRender[back[back.length - 1] - 1] = {'rel': this.imgList[back[back.length - 1] - 1], 'position': 'back'};
                         }
                         if(back[back.length - 1] == 0) { /* Back to current */
                             this.imgRender[this.imgList.length - 1] = {'rel': this.imgList[this.imgList.length - 1], 'position': 'current'};
@@ -119,7 +136,7 @@
                             this.imgRender[back[back.length - 1]].position = 'current';
                         }
                         this.imgRender[current[0]].position = 'next'; /* Current to next */
-                        console.log(back[0] - 1, back[back.length - 1], current[0]);
+                        console.log(back[back.length - 1] - 1, back[back.length - 1], current[0]);
                     } else {
                         let current = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'current');
                         let next = Object.keys(this.imgRender).filter(e => this.imgRender[e].position == 'next');
@@ -160,6 +177,8 @@
                         files[i].value = '';
                     }
                     document.querySelector('#refreshIcn').style.animation = 'spin 1s';
+                    document.querySelector('#folderIcn').style.animation = 'rise 0.5s forwards ease-in-out';
+                    document.querySelector('#folderOpenIcn').style.animation = 'fade 0.5s forwards ease-in-out';
                     setTimeout(() => {
                         document.querySelector('#refreshIcn').style.animation = '';
                     }, 1000);
